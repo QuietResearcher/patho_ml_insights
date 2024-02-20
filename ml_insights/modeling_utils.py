@@ -490,12 +490,21 @@ def cv_predictions(model, X, y, num_cv_folds=5, stratified=True, clone_model=Fal
     n_classes = np.max(y).astype(int)+1
     out_probs = np.zeros((X.shape[0],n_classes))
     for fn in range(num_cv_folds):
-        X_tr = X.loc[foldnum_vec!=fn]
-        y_tr = y[foldnum_vec!=fn]
-        X_te = X.loc[foldnum_vec==fn]
-        model_to_fit.fit(X_tr, y_tr)
-        out_probs[foldnum_vec==fn,:] = model_to_fit.predict_proba(X_te)
-    
+      # Boolean masks for training and test indices
+      train_mask = foldnum_vec != fn
+      test_mask = foldnum_vec == fn
+      
+      # Selecting training and test data using boolean indexing
+      X_tr = X[train_mask]
+      y_tr = y[train_mask]
+      X_te = X[test_mask]
+      
+      # Fit the model on the training data
+      model_to_fit.fit(X_tr, y_tr)
+      
+      # Predict probabilities for the test data and store them in 'out_probs'
+      out_probs[test_mask, :] = model_to_fit.predict_proba(X_te)
+      
     return(out_probs)
 
 def get_stratified_foldnums(y, num_folds, random_state=42):
